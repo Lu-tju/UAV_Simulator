@@ -1,6 +1,6 @@
 # UAV Simulator
 
-This repo is cloned from https://github.com/HKUST-Aerial-Robotics/Fast-Planner
+This repo is modified from https://github.com/HKUST-Aerial-Robotics/Fast-Planner
 
 Use:
 ```bash
@@ -11,3 +11,7 @@ catkin_make
 source devel/setup.bash
 roslaunch so3_quadrotor_simulator simulator.launch
 ```
+
+**updata:**
++ add the log recorder
++ fine-tuning PID

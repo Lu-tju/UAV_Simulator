@@ -54,9 +54,9 @@ SO3Control::calculateControl(const Eigen::Vector3d& des_pos,
   if ( flag_use_vel ) totalError.noalias() += des_vel - vel_;
   if ( flag_use_acc ) totalError.noalias() += des_acc - acc_;
 
-  Eigen::Vector3d ka(fabs(totalError[0]) > 3 ? 0 : (fabs(totalError[0]) * 0.2),
-                     fabs(totalError[1]) > 3 ? 0 : (fabs(totalError[1]) * 0.2),
-                     fabs(totalError[2]) > 3 ? 0 : (fabs(totalError[2]) * 0.2));
+  Eigen::Vector3d ka(fabs(totalError[0]) > 3 ? 0 : (fabs(totalError[0]) * 0.0),
+                     fabs(totalError[1]) > 3 ? 0 : (fabs(totalError[1]) * 0.0),
+                     fabs(totalError[2]) > 3 ? 0 : (fabs(totalError[2]) * 0.0));
 
   // std::cout << des_pos.transpose() << std::endl;
   // std::cout << des_vel.transpose() << std::endl;

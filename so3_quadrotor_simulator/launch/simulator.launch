@@ -8,7 +8,8 @@
         <param name="simulator/init_state_x" value="$(arg init_x)"/>
         <param name="simulator/init_state_y" value="$(arg init_y)"/>
         <param name="simulator/init_state_z" value="$(arg init_z)"/>
-        <remap from="~odom" to="/juliett/ground_truth/odom"/>
+        <remap from="~odom_juliett" to="/juliett/ground_truth/odom"/>
+        <remap from="~odom" to="/sim/odom"/>
         <remap from="~imu" to="/sim/imu"/>
         <remap from="~cmd" to="so3_cmd"/>
         <remap from="~force_disturbance" to="force_disturbance"/>    
@@ -19,7 +20,7 @@
         <param name="so3_control/init_state_x" value="$(arg init_x)"/>
         <param name="so3_control/init_state_y" value="$(arg init_y)"/>
         <param name="so3_control/init_state_z" value="$(arg init_z)"/>
-        <remap from="~odom" to="/juliett/ground_truth/odom"/>
+        <remap from="~odom" to="/sim/odom"/>
         <remap from="~imu" to="/sim/imu"/>
         <remap from="~position_cmd" to="/so3_control/pos_cmd"/>
         <remap from="~motors" to="motors"/>

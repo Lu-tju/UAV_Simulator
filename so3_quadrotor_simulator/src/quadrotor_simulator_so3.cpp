@@ -35,6 +35,8 @@ void stateToOdomMsg(const QuadrotorSimulator::Quadrotor::State& state,
                     nav_msgs::Odometry&                         odom);
 void quadToImuMsg(const QuadrotorSimulator::Quadrotor& quad,
                   sensor_msgs::Imu&                    imu);
+void quadToOdomJuliettMsg(const QuadrotorSimulator::Quadrotor& quad,
+                          nav_msgs::Odometry&                  odom);
 
 static Control
 getControl(const QuadrotorSimulator::Quadrotor& quad, const Command& cmd)
@@ -204,6 +206,7 @@ main(int argc, char** argv)
   ros::NodeHandle n("~");
 
   ros::Publisher  odom_pub = n.advertise<nav_msgs::Odometry>("odom", 100);
+  ros::Publisher  odom_juliett_pub = n.advertise<nav_msgs::Odometry>("odom_juliett", 100);
   ros::Publisher  imu_pub  = n.advertise<sensor_msgs::Imu>("imu", 10);
   ros::Subscriber cmd_sub =
     n.subscribe("cmd", 100, &cmd_callback, ros::TransportHints().tcpNoDelay());
@@ -244,6 +247,10 @@ main(int argc, char** argv)
   nav_msgs::Odometry odom_msg;
   odom_msg.header.frame_id = "world";
   odom_msg.child_frame_id  = "/" + quad_name;
+
+  nav_msgs::Odometry odom_juliett_msg;
+  odom_juliett_msg.header.frame_id = "world";
+  odom_juliett_msg.child_frame_id  = "/" + quad_name;
 
   sensor_msgs::Imu imu;
   imu.header.frame_id = "world";
@@ -289,9 +296,12 @@ main(int argc, char** argv)
     {
       next_odom_pub_time += odom_pub_duration;
       odom_msg.header.stamp = tnow;
+      odom_juliett_msg.header.stamp = tnow;
       state                 = quad.getState();
       stateToOdomMsg(state, odom_msg);
       quadToImuMsg(quad, imu);
+      quadToOdomJuliettMsg(quad, odom_juliett_msg);
+      odom_juliett_pub.publish(odom_juliett_msg);
       odom_pub.publish(odom_msg);
       imu_pub.publish(imu);
     }
@@ -323,6 +333,30 @@ stateToOdomMsg(const QuadrotorSimulator::Quadrotor::State& state,
   odom.twist.twist.angular.x = state.omega(0);
   odom.twist.twist.angular.y = state.omega(1);
   odom.twist.twist.angular.z = state.omega(2);
+}
+
+void
+quadToOdomJuliettMsg(const QuadrotorSimulator::Quadrotor& quad,
+                      nav_msgs::Odometry& odom)
+{
+  QuadrotorSimulator::Quadrotor::State state = quad.getState();
+  odom.pose.pose.position.x = state.x(0);
+  odom.pose.pose.position.y = state.x(1);
+  odom.pose.pose.position.z = state.x(2);
+
+  Eigen::Quaterniond q(state.R);
+  odom.pose.pose.orientation.x = q.x();
+  odom.pose.pose.orientation.y = q.y();
+  odom.pose.pose.orientation.z = q.z();
+  odom.pose.pose.orientation.w = q.w();
+
+  odom.twist.twist.linear.x = state.v(0);
+  odom.twist.twist.linear.y = state.v(1);
+  odom.twist.twist.linear.z = state.v(2);
+
+  odom.twist.twist.angular.x = quad.getAcc()[0];
+  odom.twist.twist.angular.y = quad.getAcc()[1];
+  odom.twist.twist.angular.z = quad.getAcc()[2];
 }
 
 void

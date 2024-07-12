@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <uav_utils/geometry_utils.h>
+#include "visualization_msgs/Marker.h"
 
 typedef struct _Control
 {
@@ -31,12 +32,14 @@ typedef struct _Disturbance
 static Command     command;
 static Disturbance disturbance;
 
-void stateToOdomMsg(const QuadrotorSimulator::Quadrotor::State& state,
-                    nav_msgs::Odometry&                         odom);
-void quadToImuMsg(const QuadrotorSimulator::Quadrotor& quad,
-                  sensor_msgs::Imu&                    imu);
-void quadToOdomJuliettMsg(const QuadrotorSimulator::Quadrotor& quad,
-                          nav_msgs::Odometry&                  odom);
+void stateToOdomMsg(const QuadrotorSimulator::Quadrotor::State &state,
+                    nav_msgs::Odometry &odom);
+void quadToImuMsg(const QuadrotorSimulator::Quadrotor &quad,
+                  sensor_msgs::Imu &imu);
+void quadToOdomJuliettMsg(const QuadrotorSimulator::Quadrotor &quad,
+                          nav_msgs::Odometry &odom);
+void quadToMaker(const QuadrotorSimulator::Quadrotor::State &state,
+                 visualization_msgs::Marker &meshROS);
 
 static Control
 getControl(const QuadrotorSimulator::Quadrotor& quad, const Command& cmd)
@@ -207,6 +210,7 @@ main(int argc, char** argv)
 
   ros::Publisher  odom_pub = n.advertise<nav_msgs::Odometry>("odom", 100);
   ros::Publisher  odom_juliett_pub = n.advertise<nav_msgs::Odometry>("odom_juliett", 100);
+  ros::Publisher  meshPub   = n.advertise<visualization_msgs::Marker>("robot", 100, true);
   ros::Publisher  imu_pub  = n.advertise<sensor_msgs::Imu>("imu", 10);
   ros::Subscriber cmd_sub =
     n.subscribe("cmd", 100, &cmd_callback, ros::TransportHints().tcpNoDelay());
@@ -222,6 +226,8 @@ main(int argc, char** argv)
   n.param("simulator/init_state_x", _init_x, 0.0);
   n.param("simulator/init_state_y", _init_y, 0.0);
   n.param("simulator/init_state_z", _init_z, 1.0);
+  std::string mesh_resource;
+  n.param("mesh_resource", mesh_resource, std::string("package://so3_quadrotor_simulator/meshes/hummingbird.mesh"));
 
   Eigen::Vector3d position = Eigen::Vector3d(_init_x, _init_y, _init_z);
   quad.setStatePos(position);
@@ -255,21 +261,21 @@ main(int argc, char** argv)
   sensor_msgs::Imu imu;
   imu.header.frame_id = "world";
 
-  /*
-  command.force[0] = 0;
-  command.force[1] = 0;
-  command.force[2] = quad.getMass()*quad.getGravity() + 0.1;
-  command.qx = 0;
-  command.qy = 0;
-  command.qz = 0;
-  command.qw = 1;
-  command.kR[0] = 2;
-  command.kR[1] = 2;
-  command.kR[2] = 2;
-  command.kOm[0] = 0.15;
-  command.kOm[1] = 0.15;
-  command.kOm[2] = 0.15;
-  */
+  visualization_msgs::Marker meshROS;
+  meshROS.header.frame_id = "world";
+  meshROS.ns = "mesh";
+  meshROS.id = 0;
+  meshROS.type = visualization_msgs::Marker::MESH_RESOURCE;
+  meshROS.action = visualization_msgs::Marker::ADD;
+  float scale = 1.0;
+  meshROS.scale.x = scale;
+  meshROS.scale.y = scale;
+  meshROS.scale.z = scale;
+  meshROS.color.a = 1;
+  meshROS.color.r = 0.8;
+  meshROS.color.g = 0.8;
+  meshROS.color.b = 0.8;
+  meshROS.mesh_resource = mesh_resource;
 
   ros::Time next_odom_pub_time = ros::Time::now();
   while (n.ok())
@@ -291,7 +297,6 @@ main(int argc, char** argv)
     quad.step(dt);
 
     ros::Time tnow = ros::Time::now();
-
     if (tnow >= next_odom_pub_time)
     {
       next_odom_pub_time += odom_pub_duration;
@@ -304,6 +309,8 @@ main(int argc, char** argv)
       odom_juliett_pub.publish(odom_juliett_msg);
       odom_pub.publish(odom_msg);
       imu_pub.publish(imu);
+      quadToMaker(state, meshROS);
+      meshPub.publish(meshROS);
     }
 
     r.sleep();
@@ -361,7 +368,6 @@ quadToOdomJuliettMsg(const QuadrotorSimulator::Quadrotor& quad,
 
 void
 quadToImuMsg(const QuadrotorSimulator::Quadrotor& quad, sensor_msgs::Imu& imu)
-
 {
   QuadrotorSimulator::Quadrotor::State state = quad.getState();
   Eigen::Quaterniond                   q(state.R);
@@ -377,4 +383,18 @@ quadToImuMsg(const QuadrotorSimulator::Quadrotor& quad, sensor_msgs::Imu& imu)
   imu.linear_acceleration.x = quad.getAcc()[0];
   imu.linear_acceleration.y = quad.getAcc()[1];
   imu.linear_acceleration.z = quad.getAcc()[2];
+}
+
+void
+quadToMaker(const QuadrotorSimulator::Quadrotor::State& state,
+            visualization_msgs::Marker& meshROS)
+{
+  meshROS.pose.position.x = state.x(0);
+  meshROS.pose.position.y = state.x(1);
+  meshROS.pose.position.z = state.x(2);
+  Eigen::Quaterniond q(state.R);
+  meshROS.pose.orientation.w = q.w();
+  meshROS.pose.orientation.x = q.x();
+  meshROS.pose.orientation.y = q.y();
+  meshROS.pose.orientation.z = q.z();
 }

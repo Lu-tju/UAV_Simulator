@@ -1,3 +1,4 @@
+# 修改无人机的数量以及位置等信息，python generate_launch.py生成launch文件
 import os
 import random
 

@@ -1,17 +1,22 @@
-# UAV Simulator
+A muti-uavs simulator, modified by Fast-Planner.
 
-This repo is modified from https://github.com/HKUST-Aerial-Robotics/Fast-Planner
+1. generate muti-uav launch file
 
-Use:
 ```bash
-cd ${YOUR_WORKSPACE_PATH}/src
-git clone https://github.com/Lu-tju/UAV_Simulator
-cd ../
-catkin_make
-source devel/setup.bash
-roslaunch so3_quadrotor_simulator simulator.launch
+python generate_launch.py
 ```
 
-**updata:**
-+ add the log recorder
-+ fine-tuning PID
+2. launch controller and simulator
+
+```bash
+catkin_make
+source devel/setup.bash
+roslaunch so3_quadrotor_simulator muti_simulator.launch
+```
+
+3. visualization
+
+```bash
+source devel/setup.bash
+rviz -d src/swarm.rviz
+```

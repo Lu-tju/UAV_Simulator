@@ -3,8 +3,8 @@
   <group ns="uav_0">
     <node pkg="so3_quadrotor_simulator" type="quadrotor_simulator_so3" name="simulator" output="screen">
       <param name="rate/odom" value="50.0"/>
-      <param name="simulator/init_state_x" value="1"/>
-      <param name="simulator/init_state_y" value="7"/>
+      <param name="simulator/init_state_x" value="10"/>
+      <param name="simulator/init_state_y" value="2"/>
       <param name="simulator/init_state_z" value="2"/>
       <remap from="~odom_juliett" to="/uav_0/sim/odom_juliett"/>
       <remap from="~odom" to="/uav_0/sim/odom"/>
@@ -13,8 +13,8 @@
     </node>
 
     <node pkg="nodelet" type="nodelet" args="standalone so3_control/SO3ControlNodelet" name="controller" required="true" output="screen">
-        <param name="so3_control/init_state_x" value="1"/>
-        <param name="so3_control/init_state_y" value="7"/>
+        <param name="so3_control/init_state_x" value="10"/>
+        <param name="so3_control/init_state_y" value="2"/>
         <param name="so3_control/init_state_z" value="2"/>
         <remap from="~odom" to="/uav_0/sim/odom"/>
         <remap from="~imu" to="/uav_0/sim/imu"/>
@@ -35,8 +35,8 @@
   <group ns="uav_1">
     <node pkg="so3_quadrotor_simulator" type="quadrotor_simulator_so3" name="simulator" output="screen">
       <param name="rate/odom" value="50.0"/>
-      <param name="simulator/init_state_x" value="9"/>
-      <param name="simulator/init_state_y" value="10"/>
+      <param name="simulator/init_state_x" value="10"/>
+      <param name="simulator/init_state_y" value="6"/>
       <param name="simulator/init_state_z" value="2"/>
       <remap from="~odom_juliett" to="/uav_1/sim/odom_juliett"/>
       <remap from="~odom" to="/uav_1/sim/odom"/>
@@ -45,8 +45,8 @@
     </node>
 
     <node pkg="nodelet" type="nodelet" args="standalone so3_control/SO3ControlNodelet" name="controller" required="true" output="screen">
-        <param name="so3_control/init_state_x" value="9"/>
-        <param name="so3_control/init_state_y" value="10"/>
+        <param name="so3_control/init_state_x" value="10"/>
+        <param name="so3_control/init_state_y" value="6"/>
         <param name="so3_control/init_state_z" value="2"/>
         <remap from="~odom" to="/uav_1/sim/odom"/>
         <remap from="~imu" to="/uav_1/sim/imu"/>
@@ -67,8 +67,8 @@
   <group ns="uav_2">
     <node pkg="so3_quadrotor_simulator" type="quadrotor_simulator_so3" name="simulator" output="screen">
       <param name="rate/odom" value="50.0"/>
-      <param name="simulator/init_state_x" value="9"/>
-      <param name="simulator/init_state_y" value="1"/>
+      <param name="simulator/init_state_x" value="1"/>
+      <param name="simulator/init_state_y" value="7"/>
       <param name="simulator/init_state_z" value="2"/>
       <remap from="~odom_juliett" to="/uav_2/sim/odom_juliett"/>
       <remap from="~odom" to="/uav_2/sim/odom"/>
@@ -77,8 +77,8 @@
     </node>
 
     <node pkg="nodelet" type="nodelet" args="standalone so3_control/SO3ControlNodelet" name="controller" required="true" output="screen">
-        <param name="so3_control/init_state_x" value="9"/>
-        <param name="so3_control/init_state_y" value="1"/>
+        <param name="so3_control/init_state_x" value="1"/>
+        <param name="so3_control/init_state_y" value="7"/>
         <param name="so3_control/init_state_z" value="2"/>
         <remap from="~odom" to="/uav_2/sim/odom"/>
         <remap from="~imu" to="/uav_2/sim/imu"/>
@@ -99,8 +99,8 @@
   <group ns="uav_3">
     <node pkg="so3_quadrotor_simulator" type="quadrotor_simulator_so3" name="simulator" output="screen">
       <param name="rate/odom" value="50.0"/>
-      <param name="simulator/init_state_x" value="5"/>
-      <param name="simulator/init_state_y" value="8"/>
+      <param name="simulator/init_state_x" value="9"/>
+      <param name="simulator/init_state_y" value="3"/>
       <param name="simulator/init_state_z" value="2"/>
       <remap from="~odom_juliett" to="/uav_3/sim/odom_juliett"/>
       <remap from="~odom" to="/uav_3/sim/odom"/>
@@ -109,8 +109,8 @@
     </node>
 
     <node pkg="nodelet" type="nodelet" args="standalone so3_control/SO3ControlNodelet" name="controller" required="true" output="screen">
-        <param name="so3_control/init_state_x" value="5"/>
-        <param name="so3_control/init_state_y" value="8"/>
+        <param name="so3_control/init_state_x" value="9"/>
+        <param name="so3_control/init_state_y" value="3"/>
         <param name="so3_control/init_state_z" value="2"/>
         <remap from="~odom" to="/uav_3/sim/odom"/>
         <remap from="~imu" to="/uav_3/sim/imu"/>
@@ -132,7 +132,7 @@
     <node pkg="so3_quadrotor_simulator" type="quadrotor_simulator_so3" name="simulator" output="screen">
       <param name="rate/odom" value="50.0"/>
       <param name="simulator/init_state_x" value="3"/>
-      <param name="simulator/init_state_y" value="5"/>
+      <param name="simulator/init_state_y" value="4"/>
       <param name="simulator/init_state_z" value="2"/>
       <remap from="~odom_juliett" to="/uav_4/sim/odom_juliett"/>
       <remap from="~odom" to="/uav_4/sim/odom"/>
@@ -142,7 +142,7 @@
 
     <node pkg="nodelet" type="nodelet" args="standalone so3_control/SO3ControlNodelet" name="controller" required="true" output="screen">
         <param name="so3_control/init_state_x" value="3"/>
-        <param name="so3_control/init_state_y" value="5"/>
+        <param name="so3_control/init_state_y" value="4"/>
         <param name="so3_control/init_state_z" value="2"/>
         <remap from="~odom" to="/uav_4/sim/odom"/>
         <remap from="~imu" to="/uav_4/sim/imu"/>

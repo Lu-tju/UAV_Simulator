@@ -48,7 +48,7 @@ for i in range(N_uav):
 launch_content += '</launch>'
 
 # 将内容写入文件
-with open(os.path.join(os.path.dirname(__file__), 'launch', 'muti_simulator.launch'), 'w') as f:
+with open(os.path.join(os.path.dirname(__file__), 'so3_quadrotor_simulator/launch', 'muti_simulator.launch'), 'w') as f:
     f.write(launch_content)
 
-print("Launch file generated: launch/muti_simulator.launch")
+print("Launch file generated: so3_quadrotor_simulator/launch/muti_simulator.launch")

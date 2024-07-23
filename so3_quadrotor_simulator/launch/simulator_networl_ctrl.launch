@@ -1,0 +1,28 @@
+<launch>
+    <arg name="init_x" value="-40.0"/>
+    <arg name="init_y" value="20.0"/>
+    <arg name="init_z" value="2.0"/> 
+
+    <node pkg="so3_quadrotor_simulator" type="quadrotor_simulator_so3" name="quadrotor_simulator_so3" output="screen">
+        <param name="rate/odom" value="50.0"/>
+        <param name="simulator/init_state_x" value="$(arg init_x)"/>
+        <param name="simulator/init_state_y" value="$(arg init_y)"/>
+        <param name="simulator/init_state_z" value="$(arg init_z)"/>
+        <remap from="~odom_juliett" to="/juliett/ground_truth/odom"/>
+        <remap from="~odom" to="/sim/odom"/>
+        <remap from="~imu" to="/sim/imu"/>
+        <remap from="~cmd" to="so3_cmd"/>
+        <remap from="~force_disturbance" to="force_disturbance"/>    
+        <remap from="~moment_disturbance" to="moment_disturbance"/>        
+    </node>
+
+    <node pkg="so3_control" type="network_controller" name="network_controller_node" output="screen">
+        <param name="init_state_x" value="$(arg init_x)"/>
+        <param name="init_state_y" value="$(arg init_y)"/>
+        <param name="init_state_z" value="$(arg init_z)"/>
+        <remap from="odom" to="/sim/odom"/>
+        <remap from="position_cmd" to="/so3_control/pos_cmd"/>
+        <remap from="so3_cmd" to="so3_cmd"/>
+    </node>
+
+</launch>

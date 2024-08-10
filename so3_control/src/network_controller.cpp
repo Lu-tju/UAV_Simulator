@@ -1,5 +1,5 @@
 /*
-    神经网络直接预测期望加速度，这个程序把他转成期望姿态+推力，直接发给仿真器，看看跟踪效果
+    神经网络直接预测期望加速度，这个程序把他转成期望姿态+推力，直接发给仿真器，目前看来并没大区别，但可能加上阻力就变不好了
 */
 #include <Eigen/Eigen>
 #include <math.h>
@@ -8,9 +8,10 @@
 #include <quadrotor_msgs/SO3Command.h>
 #include <tf/transform_datatypes.h>
 #include <ros/ros.h>
+#include "so3_control/HGDO.h"
 
 #define ONE_G 9.81
-
+// 他这个控制器收的是绝对的力，px4收的是油门百分比，例如只有重力g时就是0.4（假设40%油门悬停）
 double mass_ = 0.98;
 double cur_yaw_ = 0;
 bool position_cmd_init_ = false;

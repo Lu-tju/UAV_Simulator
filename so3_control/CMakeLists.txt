@@ -183,6 +183,7 @@ ${catkin_LIBRARIES}
 add_executable(network_controller src/network_controller.cpp)
 target_link_libraries(network_controller 
 ${catkin_LIBRARIES}
+SO3Control
 )
 
 

@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     file_path = sys.argv[1]
-    temp = np.loadtxt(file_path, dtype=np.str, delimiter=",")
+    temp = np.loadtxt(file_path, dtype=str, delimiter=",")
     print('load file:',file_path)
-    label = temp[0,:].astype(np.str)
-    data = temp[1:,:].astype(np.float)
+    label = temp[0,:].astype(str)
+    data = temp[1:,:].astype(np.float64)
     timestamp = (data[:,0]-data[0,0])
     print('data length:',len(data))
     # print(timestamp)

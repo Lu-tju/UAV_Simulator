@@ -17,12 +17,16 @@
     </node>
 
     <node pkg="so3_control" type="network_controller" name="network_controller_node" output="screen">
+        <param name="use_disturbance_observer" value="false"/>
         <param name="init_state_x" value="$(arg init_x)"/>
         <param name="init_state_y" value="$(arg init_y)"/>
         <param name="init_state_z" value="$(arg init_z)"/>
-        <remap from="odom" to="/sim/odom"/>
-        <remap from="position_cmd" to="/so3_control/pos_cmd"/>
-        <remap from="so3_cmd" to="so3_cmd"/>
+        <remap from="~odom" to="/sim/odom"/>
+        <remap from="~imu" to="/sim/imu"/>
+        <remap from="~position_cmd" to="/so3_control/pos_cmd"/>
+        <remap from="~so3_cmd" to="so3_cmd"/>
+        <param name="record_log" value = "false"/>  
+        <param name="logger_file_name" value = "$(find so3_control)/logger/"/>   
     </node>
 
 </launch>

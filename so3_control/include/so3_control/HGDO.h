@@ -5,6 +5,26 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+void get_dcm_from_q(Eigen::Matrix3d &dcm, const Eigen::Quaterniond &q) {
+    float a = q.w();
+    float b = q.x();
+    float c = q.y();
+    float d = q.z();
+    float aSq = a*a;
+    float bSq = b*b;
+    float cSq = c*c;
+    float dSq = d*d;
+    dcm(0, 0) = aSq + bSq - cSq - dSq; 
+    dcm(0, 1) = 2 * (b * c - a * d);
+    dcm(0, 2) = 2 * (a * c + b * d);
+    dcm(1, 0) = 2 * (b * c + a * d);
+    dcm(1, 1) = aSq - bSq + cSq - dSq;
+    dcm(1, 2) = 2 * (c * d - a * b);
+    dcm(2, 0) = 2 * (b * d - a * c);
+    dcm(2, 1) = 2 * (a * b + c * d);
+    dcm(2, 2) = aSq - bSq - cSq + dSq;
+}
+
 class HGDO
 {
 public:
@@ -36,7 +56,7 @@ public:
     {
         Eigen::Vector3d dz1, dz2;
         Eigen::Vector3d U = U_input;
-        U(2) += g;
+        // U(2) -= g;
         for (int i = 0; i < 3; i++)
         {
             dz1(i) = U(i) + z2_hgdo(i) - (alpha_1 / theta) * (z1_hgdo(i) - vel(i));
@@ -55,7 +75,7 @@ public:
     {
         Eigen::Vector3d dz1, dz2;
         Eigen::Vector3d U = U_input;
-        U(2) += g;
+        // U(2) += g;
         for (int i = 0; i < 3; i++)
         {
             double ob = (z1_nhgdo(i) - vel(i)) / d_bound;

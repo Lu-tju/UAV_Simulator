@@ -1,44 +1,6 @@
-/*
-    神经网络直接预测期望加速度，这个程序把他转成期望姿态+推力，直接发给仿真器，目前看来并没大区别，但可能加上阻力就变不好了
-    注意规划器要从实际状态规划，不能从期望了,否则会逐渐飘走：现在我是位置速度从实际的，加速度从期望的
-*/
-#include <Eigen/Eigen>
-#include <math.h>
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/Imu.h>
-#include <quadrotor_msgs/PositionCommand.h>
-#include <quadrotor_msgs/SO3Command.h>
-#include <tf/transform_datatypes.h>
-#include <ros/ros.h>
-#include <so3_control/SO3Control.h>
-#include "so3_control/HGDO.h"
-#include <string>
-#include <iostream>
-#include <fstream>
+#include "so3_control/NetworkControl.h"
 
-#define ONE_G 9.81
-
-// 他这个控制器收的是绝对的力，px4收的是油门百分比，例如只有重力g时就是0.4（假设40%油门悬停）
-double mass_ = 0.98;
-double control_dt_ = 0.02;
-double cur_yaw_ = 0;
-Eigen::Vector3d cur_vel_(0, 0, 0);
-Eigen::Vector3d cur_acc_(0, 0, 0);
-Eigen::Vector3d dis_acc_(0, 0, 0);
-Eigen::Vector3d last_des_acc_(0, 0, 0);
-bool position_cmd_init_ = false;
-bool takeoff_cmd_init_ = false;
-ros::Publisher so3_command_pub_;
-ros::Subscriber position_cmd_sub_, odom_sub_, imu_sub_;
-double init_x_, init_y_, init_z_;
-bool use_disturbance_observer_ = false;
-SO3Control so3_controller_;
-HGDO disturbance_observer(control_dt_);
-bool record_log_ = false;
-std::ofstream logger;
-std::string logger_file_name;
-
-void initLogRecorder()
+void NetworkControl::initLogRecorder()
 {
     std::cout << "logger_file_name: " << logger_file_name << std::endl;
     std::string temp_file_name = logger_file_name + "Net_logger_";
@@ -78,7 +40,7 @@ void initLogRecorder()
     }
 }
 
-void recordLog(Eigen::Vector3d &cur_v, Eigen::Vector3d &cur_a, Eigen::Vector3d &des_a, Eigen::Vector3d &dis_a, double cur_yaw, double des_yaw)
+void NetworkControl::recordLog(Eigen::Vector3d &cur_v, Eigen::Vector3d &cur_a, Eigen::Vector3d &des_a, Eigen::Vector3d &dis_a, double cur_yaw, double des_yaw)
 {
     if (logger.is_open())
     {
@@ -100,7 +62,7 @@ void recordLog(Eigen::Vector3d &cur_v, Eigen::Vector3d &cur_a, Eigen::Vector3d &
     }
 }
 
-Eigen::Vector3d publishHoverSO3Command(Eigen::Vector3d des_pos_, Eigen::Vector3d des_vel_, Eigen::Vector3d des_acc_, double des_yaw_, double des_yaw_dot_)
+Eigen::Vector3d NetworkControl::publishHoverSO3Command(Eigen::Vector3d des_pos_, Eigen::Vector3d des_vel_, Eigen::Vector3d des_acc_, double des_yaw_, double des_yaw_dot_)
 {
     Eigen::Vector3d kx_(5.7, 5.7, 6.2);
     Eigen::Vector3d kv_(3.4, 3.4, 4.0);
@@ -138,7 +100,7 @@ Eigen::Vector3d publishHoverSO3Command(Eigen::Vector3d des_pos_, Eigen::Vector3d
     return att_acc;
 }
 
-void get_Q_from_ACC(const Eigen::Vector3d &ref_acc, double ref_yaw, Eigen::Quaterniond &quat_des, Eigen::Vector3d &force_des)
+void NetworkControl::get_Q_from_ACC(const Eigen::Vector3d &ref_acc, double ref_yaw, Eigen::Quaterniond &quat_des, Eigen::Vector3d &force_des)
 {
     Eigen::Vector3d force_ = mass_ * ONE_G * Eigen::Vector3d(0, 0, 1);
     force_.noalias() += mass_ * ref_acc;
@@ -178,7 +140,7 @@ void get_Q_from_ACC(const Eigen::Vector3d &ref_acc, double ref_yaw, Eigen::Quate
 }
 
 // 世界系的期望加速度：ref_acc（加上g）、期望yaw：ref_yaw
-void pub_SO3_command(Eigen::Vector3d ref_acc, double ref_yaw, double cur_yaw)
+void NetworkControl::pub_SO3_command(Eigen::Vector3d ref_acc, double ref_yaw, double cur_yaw)
 {
     Eigen::Vector3d force;
     Eigen::Quaterniond quat_des;
@@ -203,13 +165,13 @@ void pub_SO3_command(Eigen::Vector3d ref_acc, double ref_yaw, double cur_yaw)
     so3_command_pub_.publish(so3_command);
 }
 
-void network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd)
+void NetworkControl::network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd)
 {
     Eigen::Vector3d des_acc = Eigen::Vector3d(cmd->acceleration.x, cmd->acceleration.y, cmd->acceleration.z);
     double des_yaw = cmd->yaw;
     
     if (position_cmd_init_){
-        disturbance_observer.HGDO_ext_force_ob(last_des_acc_, cur_vel_, dis_acc_);
+        disturbance_observer_.HGDO_ext_force_ob(last_des_acc_, cur_vel_, dis_acc_);
         std::cout << "dis_acc: " << dis_acc_.transpose() << std::endl;
     }
 
@@ -240,7 +202,7 @@ void network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd)
     position_cmd_init_ = true;
 }
 
-void odom_callback(const nav_msgs::Odometry::ConstPtr &odom)
+void NetworkControl::odom_callback(const nav_msgs::Odometry::ConstPtr &odom)
 {
     cur_yaw_ = tf::getYaw(odom->pose.pose.orientation);
     cur_vel_ = Eigen::Vector3d(odom->twist.twist.linear.x, odom->twist.twist.linear.y, odom->twist.twist.linear.z);
@@ -258,7 +220,7 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &odom)
         Eigen::Vector3d att_acc = publishHoverSO3Command(des_pos, des_vel, des_acc, des_yaw, des_yaw_dot);
 
         if(takeoff_cmd_init_){
-            disturbance_observer.HGDO_ext_force_ob(last_des_acc_, cur_vel_, dis_acc_);
+            disturbance_observer_.HGDO_ext_force_ob(last_des_acc_, cur_vel_, dis_acc_);
             std::cout << "dis_acc: " << dis_acc_.transpose() << std::endl;
         }
 
@@ -269,36 +231,11 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &odom)
     }
 }
 
-void imu_callback(const sensor_msgs::Imu &imu)
+void NetworkControl::imu_callback(const sensor_msgs::Imu &imu)
 {
     Eigen::Vector3d acc(imu.linear_acceleration.x,
                         imu.linear_acceleration.y,
                         imu.linear_acceleration.z);
     cur_acc_ = acc;
     so3_controller_.setAcc(acc);
-}
-
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "network_controller_node");
-    ros::NodeHandle nh("~");
-
-    // 创建订阅者和发布者
-    so3_controller_.setMass(mass_);
-    so3_command_pub_ = nh.advertise<quadrotor_msgs::SO3Command>("so3_cmd", 10);
-    position_cmd_sub_ = nh.subscribe("position_cmd", 1, network_cmd_callback, ros::TransportHints().tcpNoDelay());
-    odom_sub_ = nh.subscribe("odom", 1, odom_callback, ros::TransportHints().tcpNoDelay());
-    imu_sub_ = nh.subscribe("imu", 1, imu_callback, ros::TransportHints().tcpNoDelay());
-    nh.param("use_disturbance_observer", use_disturbance_observer_, false);
-    nh.param("init_state_x", init_x_, 0.0);
-    nh.param("init_state_y", init_y_, 0.0);
-    nh.param("init_state_z", init_z_, 2.0);
-    nh.param("record_log", record_log_, false);
-    nh.param("logger_file_name", logger_file_name, std::string("/home/lu/"));
-    if (record_log_)
-        initLogRecorder();
-    // 进入循环
-    ros::spin();
-
-    return 0;
 }

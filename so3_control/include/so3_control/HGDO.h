@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-void get_dcm_from_q(Eigen::Matrix3d &dcm, const Eigen::Quaterniond &q) {
+inline void get_dcm_from_q(Eigen::Matrix3d &dcm, const Eigen::Quaterniond &q) {
     float a = q.w();
     float b = q.x();
     float c = q.y();
@@ -28,7 +28,7 @@ void get_dcm_from_q(Eigen::Matrix3d &dcm, const Eigen::Quaterniond &q) {
 class HGDO
 {
 public:
-    HGDO();
+    HGDO(){};
     HGDO(double control_dt){
         control_dt_ = control_dt;
     };

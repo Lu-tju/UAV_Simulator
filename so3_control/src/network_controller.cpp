@@ -207,14 +207,32 @@ void network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd)
 {
     Eigen::Vector3d des_acc = Eigen::Vector3d(cmd->acceleration.x, cmd->acceleration.y, cmd->acceleration.z);
     double des_yaw = cmd->yaw;
-    if(position_cmd_init_ && use_disturbance_observer_){
+    
+    if (position_cmd_init_){
         disturbance_observer.HGDO_ext_force_ob(last_des_acc_, cur_vel_, dis_acc_);
-        std::cout<<"dis_acc: "<<dis_acc_.transpose()<<std::endl;
+        std::cout << "dis_acc: " << dis_acc_.transpose() << std::endl;
     }
-    Eigen::Vector3d att_acc = des_acc - dis_acc_;
-    // std::cout<<"acc: "<<des_acc.transpose()<<"   yaw:"<<des_yaw<<std::endl;
+
+    Eigen::Vector3d att_acc;
+    if (cmd->trajectory_flag == quadrotor_msgs::PositionCommand::TRAJECTORY_STATUS_READY)
+    {    
+        if (use_disturbance_observer_)
+            att_acc = des_acc - dis_acc_;
+        else
+            att_acc = des_acc;
+        pub_SO3_command(att_acc, des_yaw, cur_yaw_);
+        // std::cout<<"acc: "<<des_acc.transpose()<<"   yaw:"<<des_yaw<<std::endl;
+    }
+    else
+    {
+        Eigen::Vector3d des_pos = Eigen::Vector3d(cmd->position.x, cmd->position.y, cmd->position.z);
+        Eigen::Vector3d des_vel = Eigen::Vector3d(cmd->velocity.x, cmd->velocity.y, cmd->velocity.z);
+        double des_yaw = cmd->yaw;
+        double des_yaw_dot = cmd->yaw_dot;
+        att_acc = publishHoverSO3Command(des_pos, des_vel, des_acc, des_yaw, des_yaw_dot);
+    }
+
     last_des_acc_ = att_acc;
-    pub_SO3_command(att_acc, des_yaw, cur_yaw_);
     if (record_log_)
         recordLog(cur_vel_, cur_acc_, des_acc, dis_acc_, cur_yaw_, des_yaw);
     position_cmd_init_ = true;
@@ -225,10 +243,11 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &odom)
     cur_yaw_ = tf::getYaw(odom->pose.pose.orientation);
     cur_vel_ = Eigen::Vector3d(odom->twist.twist.linear.x, odom->twist.twist.linear.y, odom->twist.twist.linear.z);
 
+    Eigen::Vector3d position = Eigen::Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, odom->pose.pose.position.z);
+    so3_controller_.setPosition(position);
+    so3_controller_.setVelocity(cur_vel_);
+
     if(!position_cmd_init_){
-        Eigen::Vector3d position = Eigen::Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, odom->pose.pose.position.z);
-        so3_controller_.setPosition(position);
-        so3_controller_.setVelocity(cur_vel_);
         Eigen::Vector3d des_pos = Eigen::Vector3d(init_x_, init_y_, init_z_);
         Eigen::Vector3d des_vel = Eigen::Vector3d(0, 0, 0);
         Eigen::Vector3d des_acc = Eigen::Vector3d(0, 0, 0);
@@ -236,10 +255,11 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &odom)
         double des_yaw_dot = 0.0;
         Eigen::Vector3d att_acc = publishHoverSO3Command(des_pos, des_vel, des_acc, des_yaw, des_yaw_dot);
 
-        if(takeoff_cmd_init_ && use_disturbance_observer_){
+        if(takeoff_cmd_init_){
             disturbance_observer.HGDO_ext_force_ob(last_des_acc_, cur_vel_, dis_acc_);
-            std::cout<<"dis_acc: "<<dis_acc_.transpose()<<std::endl;
+            std::cout << "dis_acc: " << dis_acc_.transpose() << std::endl;
         }
+
         last_des_acc_ = att_acc;
         if (record_log_)
             recordLog(cur_vel_, cur_acc_, des_acc, dis_acc_, cur_yaw_, des_yaw);

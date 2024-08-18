@@ -222,6 +222,8 @@ void network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd)
             att_acc = des_acc;
         pub_SO3_command(att_acc, des_yaw, cur_yaw_);
         // std::cout<<"acc: "<<des_acc.transpose()<<"   yaw:"<<des_yaw<<std::endl;
+        if (record_log_)
+            recordLog(cur_vel_, cur_acc_, des_acc, dis_acc_, cur_yaw_, des_yaw);
     }
     else
     {
@@ -230,11 +232,11 @@ void network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd)
         double des_yaw = cmd->yaw;
         double des_yaw_dot = cmd->yaw_dot;
         att_acc = publishHoverSO3Command(des_pos, des_vel, des_acc, des_yaw, des_yaw_dot);
+        if (record_log_)
+            recordLog(cur_vel_, cur_acc_, att_acc, dis_acc_, cur_yaw_, des_yaw);
     }
 
     last_des_acc_ = att_acc;
-    if (record_log_)
-        recordLog(cur_vel_, cur_acc_, des_acc, dis_acc_, cur_yaw_, des_yaw);
     position_cmd_init_ = true;
 }
 
@@ -262,7 +264,7 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &odom)
 
         last_des_acc_ = att_acc;
         if (record_log_)
-            recordLog(cur_vel_, cur_acc_, des_acc, dis_acc_, cur_yaw_, des_yaw);
+            recordLog(cur_vel_, cur_acc_, att_acc, dis_acc_, cur_yaw_, des_yaw);
         takeoff_cmd_init_ = true;
     }
 }

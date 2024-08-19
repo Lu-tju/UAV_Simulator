@@ -16,6 +16,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 #define ONE_G 9.81
 
@@ -107,9 +108,16 @@ private:
 
     // mavros interface
     bool takeoff_land_srv_handle(quadrotor_msgs::SetTakeoffLand::Request &req,
-                                 quadrotor_msgs::SetTakeoffLand::Response &res);
+                                 quadrotor_msgs::SetTakeoffLand::Response &res){
+        std::thread t(&NetworkControl::takeoff_land_thread, this, std::ref(req));
+        t.detach();
+        res.res = true;
+        return true;
+    }
 
     bool arm_disarm_vehicle(bool arm);
+
+    void takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request &req);
 
 };
 

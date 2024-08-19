@@ -263,8 +263,7 @@ void NetworkControl::timerCallback(const ros::TimerEvent &)
     takeoff_cmd_init_ = true;
 }
 
-bool NetworkControl::takeoff_land_srv_handle(quadrotor_msgs::SetTakeoffLand::Request &req,
-                                             quadrotor_msgs::SetTakeoffLand::Response &res)
+void NetworkControl::takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request &req)
 {
     des_pos_ = cur_pos_;
     des_yaw_ = cur_yaw_;
@@ -275,8 +274,7 @@ bool NetworkControl::takeoff_land_srv_handle(quadrotor_msgs::SetTakeoffLand::Req
         if (!arm_disarm_vehicle(true))
         {
             std::cout << "Service failed because cannot Arm!" << std::endl;
-            res.res = false;
-            return true;
+            return;
         }
         sleep(1);
 
@@ -322,8 +320,8 @@ bool NetworkControl::takeoff_land_srv_handle(quadrotor_msgs::SetTakeoffLand::Req
             land_loop.sleep();
         }
     }
-    res.res = true;
-    return true;
+    ROS_INFO("take off thread out");
+    return;
 }
 
 bool NetworkControl::arm_disarm_vehicle(bool arm)

@@ -62,11 +62,12 @@ void NetworkControl::recordLog(Eigen::Vector3d &cur_v, Eigen::Vector3d &cur_a, E
     }
 }
 
-Eigen::Vector3d NetworkControl::publishHoverSO3Command(Eigen::Vector3d des_pos_, Eigen::Vector3d des_vel_, Eigen::Vector3d des_acc_, double des_yaw_, double des_yaw_dot_)
+Eigen::Vector3d NetworkControl::publishHoverSO3Command(Eigen::Vector3d des_pos, Eigen::Vector3d des_vel, 
+                                                       Eigen::Vector3d des_acc, double des_yaw, double des_yaw_dot)
 {
-    Eigen::Vector3d kx_(5.7, 5.7, 6.2);
-    Eigen::Vector3d kv_(3.4, 3.4, 4.0);
-    so3_controller_.calculateControl(des_pos_, des_vel_, des_acc_, des_yaw_, des_yaw_dot_, kx_, kv_);
+    Eigen::Vector3d kx(5.7, 5.7, 6.2);
+    Eigen::Vector3d kv(3.4, 3.4, 4.0);
+    so3_controller_.calculateControl(des_pos, des_vel, des_acc, des_yaw, des_yaw_dot, kx, kv);
 
     Eigen::Vector3d force = so3_controller_.getComputedForce();
     Eigen::Quaterniond orientation = so3_controller_.getComputedOrientation();
@@ -249,12 +250,16 @@ void NetworkControl::timerCallback(const ros::TimerEvent &)
     if (position_cmd_init_ && ctrl_valid_)
         return;
 
-    Eigen::Vector3d att_acc = publishHoverSO3Command(des_pos_, des_vel_, des_acc_, des_yaw_, des_yaw_dot_);
+    mutex_.lock();
+    Eigen::Vector3d des_pos_temp = des_pos_;
+    mutex_.unlock();
+
+    Eigen::Vector3d att_acc = publishHoverSO3Command(des_pos_temp, des_vel_, des_acc_, des_yaw_, des_yaw_dot_);
 
     if (takeoff_cmd_init_)
     {
         disturbance_observer_.HGDO_ext_force_ob(last_des_acc_, cur_vel_, dis_acc_);
-        std::cout << "dis_acc: " << dis_acc_.transpose() << std::endl;
+        // std::cout << "dis_acc: " << dis_acc_.transpose() << std::endl;
     }
 
     last_des_acc_ = att_acc;
@@ -265,9 +270,12 @@ void NetworkControl::timerCallback(const ros::TimerEvent &)
 
 void NetworkControl::takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request &req)
 {
+    mutex_.lock();
     des_pos_ = cur_pos_;
     des_yaw_ = cur_yaw_;
+    mutex_.unlock();
     ref_valid_ = true;
+
     if (req.takeoff)
     {
         std::cout << "takeoff process start" << std::endl;
@@ -287,7 +295,9 @@ void NetworkControl::takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request
         ros::Time start_takeoff_task_time = ros::Time::now();
         while (ros::ok() && ros::Time::now() - start_takeoff_task_time < ros::Duration(8.0))
         {       
+            mutex_.lock();
             des_pos_(2) += takeoff_ddz;
+            mutex_.unlock();
 
             if (des_pos_(2) > req.takeoff_altitude)
             {
@@ -309,7 +319,9 @@ void NetworkControl::takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request
         ros::Time start_land_task_time = ros::Time::now();
         while (ros::ok() && ros::Time::now() - start_land_task_time < ros::Duration(8.0))
         {
+            mutex_.lock();
             des_pos_(2) += land_ddz;
+            mutex_.unlock();
 
             if (fabs(cur_pos_(2)) < 0.1f && fabs(cur_vel_(2)) < 1.0f)
             {

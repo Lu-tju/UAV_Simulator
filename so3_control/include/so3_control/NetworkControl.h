@@ -17,6 +17,7 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <mutex>
 
 #define ONE_G 9.81
 
@@ -53,7 +54,8 @@ private:
     ros::Subscriber position_cmd_sub_, odom_sub_, imu_sub_;
     ros::ServiceServer takeoff_land_srv;
     ros::Timer takeoff_land_control_timer;
-
+    std::mutex mutex_;
+    
     double mass_ = 0.98;
     double control_dt_ = 0.02;
     double hover_thrust_ = 0.4;

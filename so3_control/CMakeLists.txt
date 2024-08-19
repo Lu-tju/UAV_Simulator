@@ -187,6 +187,12 @@ target_link_libraries(network_control_node
     SO3Control
 )
 
+add_executable(network_controller src/network_controller.cpp)
+target_link_libraries(network_controller 
+    ${catkin_LIBRARIES}
+    SO3Control
+)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(multi_map_visualization multi_map_server_messages_cpp)

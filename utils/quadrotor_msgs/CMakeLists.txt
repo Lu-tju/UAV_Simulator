@@ -76,6 +76,12 @@ add_message_files(
   LQRTrajectory.msg
 )
 
+add_service_files(
+  DIRECTORY srv
+  FILES
+  SetTakeoffLand.srv
+)
+
 generate_messages(
     DEPENDENCIES
     geometry_msgs

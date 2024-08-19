@@ -10,7 +10,9 @@
 #include <tf/transform_datatypes.h>
 #include <ros/ros.h>
 #include <so3_control/SO3Control.h>
-#include "so3_control/HGDO.h"
+#include <so3_control/HGDO.h>
+#include <so3_control/mavros_interface.h>
+#include <quadrotor_msgs/SetTakeoffLand.h>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -25,11 +27,10 @@ public:
 
         so3_controller_.setMass(mass_);
         disturbance_observer_ = HGDO(control_dt_);
-        
+
+        nh_.param("is_simulation", is_simulation_, false);
         nh_.param("use_disturbance_observer", use_disturbance_observer_, false);
-        nh_.param("init_state_x", init_x_, 0.0);
-        nh_.param("init_state_y", init_y_, 0.0);
-        nh_.param("init_state_z", init_z_, 2.0);
+        nh_.param("hover_thrust", hover_thrust_, 0.4);
         nh_.param("record_log", record_log_, false);
         nh_.param("logger_file_name", logger_file_name, std::string("/home/lu/"));
 
@@ -38,8 +39,9 @@ public:
         odom_sub_ = nh_.subscribe("odom", 1, &NetworkControl::odom_callback, this, ros::TransportHints().tcpNoDelay());
         imu_sub_ = nh_.subscribe("imu", 1, &NetworkControl::imu_callback, this, ros::TransportHints().tcpNoDelay());
 
-        if (record_log_)
-            initLogRecorder();
+        takeoff_land_control_timer = nh_.createTimer(ros::Duration(control_dt_), &NetworkControl::timerCallback, this);
+
+        takeoff_land_srv = nh_.advertiseService("takeoff_land", &NetworkControl::takeoff_land_srv_handle, this);
     };
 
     ~NetworkControl(){};
@@ -48,24 +50,40 @@ private:
     ros::NodeHandle nh_;
     ros::Publisher so3_command_pub_;
     ros::Subscriber position_cmd_sub_, odom_sub_, imu_sub_;
+    ros::ServiceServer takeoff_land_srv;
+    ros::Timer takeoff_land_control_timer;
 
     double mass_ = 0.98;
     double control_dt_ = 0.02;
+    double hover_thrust_ = 0.4;
+    
     double cur_yaw_ = 0;
-
+    Eigen::Vector3d cur_pos_ = Eigen::Vector3d(0, 0, 0);
     Eigen::Vector3d cur_vel_ = Eigen::Vector3d(0, 0, 0);
     Eigen::Vector3d cur_acc_ = Eigen::Vector3d(0, 0, 0);
+    Eigen::Quaterniond cur_att_;
     Eigen::Vector3d dis_acc_ = Eigen::Vector3d(0, 0, 0);
     Eigen::Vector3d last_des_acc_ = Eigen::Vector3d(0, 0, 0);
 
+    Eigen::Vector3d des_pos_ = Eigen::Vector3d(0, 0, 0);
+    Eigen::Vector3d des_vel_ = Eigen::Vector3d(0, 0, 0);
+    Eigen::Vector3d des_acc_ = Eigen::Vector3d(0, 0, 0);
+    double des_yaw_ = 0;
+    double des_yaw_dot_ = 0;
+
+    bool is_simulation_ = false;
+    bool state_init_ = false;
+    bool ref_valid_ = false;
+    bool ctrl_valid_ = false;
     bool position_cmd_init_ = false;
     bool takeoff_cmd_init_ = false;
     bool use_disturbance_observer_ = false;
+    bool record_log_ = false;
     
-    double init_x_, init_y_, init_z_;
     SO3Control so3_controller_;
     HGDO disturbance_observer_;
-    bool record_log_ = false;
+    Mavros_Interface mavros_interface_;
+    
     std::ofstream logger;
     std::string logger_file_name;
 
@@ -84,6 +102,15 @@ private:
     void odom_callback(const nav_msgs::Odometry::ConstPtr &odom);
 
     void imu_callback(const sensor_msgs::Imu &imu);
+
+    void timerCallback(const ros::TimerEvent&);
+
+    // mavros interface
+    bool takeoff_land_srv_handle(quadrotor_msgs::SetTakeoffLand::Request &req,
+                                 quadrotor_msgs::SetTakeoffLand::Response &res);
+
+    bool arm_disarm_vehicle(bool arm);
+
 };
 
 #endif

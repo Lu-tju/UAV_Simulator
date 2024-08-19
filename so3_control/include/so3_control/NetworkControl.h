@@ -55,7 +55,7 @@ private:
     ros::ServiceServer takeoff_land_srv;
     ros::Timer takeoff_land_control_timer;
     std::mutex mutex_;
-    
+
     double mass_ = 0.98;
     double control_dt_ = 0.02;
     double hover_thrust_ = 0.4;
@@ -67,6 +67,7 @@ private:
     Eigen::Quaterniond cur_att_;
     Eigen::Vector3d dis_acc_ = Eigen::Vector3d(0, 0, 0);
     Eigen::Vector3d last_des_acc_ = Eigen::Vector3d(0, 0, 0);
+    double last_thrust_ = 0;
 
     Eigen::Vector3d des_pos_ = Eigen::Vector3d(0, 0, 0);
     Eigen::Vector3d des_vel_ = Eigen::Vector3d(0, 0, 0);

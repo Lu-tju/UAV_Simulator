@@ -35,6 +35,7 @@ void NetworkControl::initLogRecorder()
         logger << "dis_ax" << ',';
         logger << "dis_ay" << ',';
         logger << "dis_az" << ',';
+        logger << "thrust" << ',';
         logger << "cur_yaw" << ',';
         logger << "des_yaw" << std::endl;
     }
@@ -57,6 +58,7 @@ void NetworkControl::recordLog(Eigen::Vector3d &cur_v, Eigen::Vector3d &cur_a, E
         logger << dis_a(0) << ',';
         logger << dis_a(1) << ',';
         logger << dis_a(2) << ',';
+        logger << last_thrust_ << ',';
         logger << cur_yaw << ',';
         logger << des_yaw << std::endl;
     }
@@ -93,6 +95,7 @@ Eigen::Vector3d NetworkControl::publishHoverSO3Command(Eigen::Vector3d des_pos, 
 
     double thrust_norm = force.norm() / (mass_ * ONE_G) * hover_thrust_;
     mavros_interface_.pub_att_thrust_cmd(orientation, thrust_norm);
+    last_thrust_ = thrust_norm;
 
     double thrust = force.norm() / mass_;
     Eigen::Matrix3d Cbn;    
@@ -170,6 +173,7 @@ void NetworkControl::pub_SO3_command(Eigen::Vector3d ref_acc, double ref_yaw, do
 
     double thrust_norm = force.norm() / (mass_ * ONE_G) * hover_thrust_;
     mavros_interface_.pub_att_thrust_cmd(quat_des, thrust_norm);
+    last_thrust_ = thrust_norm;
 }
 
 void NetworkControl::network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd)
@@ -289,7 +293,6 @@ void NetworkControl::takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request
         double takeoff_vel = 0.8;
         double takeoff_ddz = takeoff_vel * control_dt_;
         ros::Rate takeoff_loop(1 / control_dt_);
-        des_vel_ = Eigen::Vector3d(0, 0, takeoff_vel);
         std::cout << "takeoff altitude: " << req.takeoff_altitude << " m" << std::endl;
         std::cout << "takeoff velocity: " << takeoff_vel << " m/s" << std::endl;
         ros::Time start_takeoff_task_time = ros::Time::now();
@@ -301,7 +304,6 @@ void NetworkControl::takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request
 
             if (des_pos_(2) > req.takeoff_altitude)
             {
-                des_vel_(2) = 0;
                 ROS_INFO("TakeOff Done! Ready to Flight...");
                 ctrl_valid_ = true;
                 break;
@@ -315,7 +317,6 @@ void NetworkControl::takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request
         double land_vel = -0.4;
         double land_ddz = land_vel * control_dt_;
         ros::Rate land_loop(1 / control_dt_);
-        des_vel_ = Eigen::Vector3d(0, 0, land_vel);
         ros::Time start_land_task_time = ros::Time::now();
         while (ros::ok() && ros::Time::now() - start_land_task_time < ros::Duration(8.0))
         {

@@ -12,6 +12,16 @@ source devel/setup.bash
 roslaunch so3_quadrotor_simulator simulator.launch
 ```
 
+pub disturbance
+```
+rostopic pub /force_disturbance
+```
+
+takeoff and land 
+```
+rosservice call /network_controller_node/takeoff_land
+```
+
 **updata:**
 + add the log recorder
 + fine-tuning PID

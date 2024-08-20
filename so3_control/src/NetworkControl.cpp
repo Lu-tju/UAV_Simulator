@@ -276,6 +276,7 @@ void NetworkControl::takeoff_land_thread(quadrotor_msgs::SetTakeoffLand::Request
 {
     mutex_.lock();
     des_pos_ = cur_pos_;
+    des_pos_(2) -= 0.2;
     des_yaw_ = cur_yaw_;
     mutex_.unlock();
     ref_valid_ = true;

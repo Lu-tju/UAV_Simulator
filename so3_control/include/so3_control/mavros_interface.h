@@ -156,14 +156,17 @@ public:
 
     void pub_att_thrust_cmd(const Eigen::Quaterniond &q_d, const double &thrust_d)
     {
+        /*
+            目前mavros用的是北东地的坐标系，为了和pid通用所以没有改mavros而是在这里改为北东地
+        */
         mavros_msgs::AttitudeTarget at_cmd;
         at_cmd.header.stamp = ros::Time::now();
         at_cmd.type_mask = at_cmd.IGNORE_ROLL_RATE | at_cmd.IGNORE_PITCH_RATE | at_cmd.IGNORE_YAW_RATE;
         at_cmd.thrust = (float)thrust_d;
         at_cmd.orientation.w = q_d.w();
         at_cmd.orientation.x = q_d.x();
-        at_cmd.orientation.y = q_d.y();
-        at_cmd.orientation.z = q_d.z();
+        at_cmd.orientation.y = -q_d.y();
+        at_cmd.orientation.z = -q_d.z();
         att_target_pub.publish(at_cmd);
     }
 

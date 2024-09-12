@@ -113,7 +113,7 @@ void NetworkControl::get_Q_from_ACC(const Eigen::Vector3d &ref_acc, double ref_y
     force_.noalias() += mass_ * ref_acc;
 
     // Limit control angle to theta degree
-    double theta = M_PI / 6;
+    double theta = M_PI / 4;
     double c = cos(theta);
     Eigen::Vector3d f;
     f.noalias() = force_ - mass_ * ONE_G * Eigen::Vector3d(0, 0, 1);
@@ -176,6 +176,13 @@ void NetworkControl::pub_SO3_command(Eigen::Vector3d ref_acc, double ref_yaw, do
     last_thrust_ = thrust_norm;
 }
 
+void NetworkControl::limite_acc(Eigen::Vector3d &acc){
+    return;  // limited if needed
+    acc[0] = std::max(-8.0, std::min(acc[0], 8.0));
+    acc[1] = std::max(-8.0, std::min(acc[1], 8.0));
+    acc[2] = std::max(-4.0, std::min(acc[2], 4.0));
+}
+
 void NetworkControl::network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd)
 {
     if (!ctrl_valid_)
@@ -190,6 +197,8 @@ void NetworkControl::network_cmd_callback(const quadrotor_msgs::PositionCommand:
     position_cmd_init_ = true;
 
     Eigen::Vector3d des_acc = Eigen::Vector3d(cmd->acceleration.x, cmd->acceleration.y, cmd->acceleration.z);
+    limite_acc(des_acc);
+
     double des_yaw = cmd->yaw;
     
     disturbance_observer_.HGDO_ext_force_ob(last_des_acc_, cur_vel_, dis_acc_);

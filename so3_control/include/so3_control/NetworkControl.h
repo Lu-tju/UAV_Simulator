@@ -18,6 +18,7 @@
 #include <fstream>
 #include <thread>
 #include <mutex>
+#include <algorithm> 
 
 #define ONE_G 9.81
 
@@ -100,6 +101,8 @@ private:
     void get_Q_from_ACC(const Eigen::Vector3d &ref_acc, double ref_yaw, Eigen::Quaterniond &quat_des, Eigen::Vector3d &force_des);
 
     void pub_SO3_command(Eigen::Vector3d ref_acc, double ref_yaw, double cur_yaw);
+
+    void limite_acc(Eigen::Vector3d &acc);
 
     void network_cmd_callback(const quadrotor_msgs::PositionCommand::ConstPtr &cmd);
 
